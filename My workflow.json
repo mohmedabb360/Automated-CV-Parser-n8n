@@ -1,0 +1,220 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1R0C85tC1_LpcdLWhzqHnhcvjn756_fNf",
+          "mode": "list",
+          "cachedResultName": "CV Uploads",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1R0C85tC1_LpcdLWhzqHnhcvjn756_fNf"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6e7de422-ec9e-44b8-9fc6-635a3bac5def",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "pKJziV4DJStCqTtl",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0a422496-5a3d-4adc-83a4-d2f9ac1e3149",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "qsdN1a0DCXiUdFpX",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "4a23cd60-d637-40e4-9a9c-9a70934fb42f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Aşağıdaki CV metnini analiz et ve SADECE aşağıdaki formatta JSON çıktısı ver. Başka hiçbir kelime, açıklama veya markdown (```json) KULLANMA. Sadece süslü parantezlerle başla ve bitir:\n{\"isim\": \"\", \"eposta\": \"\", \"telefon\": \"\", \"meslek\": \"\", \"ozet\": \"\"}\n\nMetin:{{ $json.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "a9df1062-b39a-4457-bd94-2007e990918c",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "3nx2Ds6NHZZy4tl9",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "355e3d59-7902-8006-a760-d4ec38a4b7ec",
+          "mode": "list",
+          "cachedResultName": "Adaylar",
+          "cachedResultUrl": "https://www.notion.so/355e3d5979028006a760d4ec38a4b7ec"
+        },
+        "title": "={{ JSON.parse($json.content.parts[0].text.replace(/```json/ig, '').replace(/```/g, '')).isim }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Email|email",
+              "emailValue": "={{ JSON.parse($json.content.parts[0].text.replace(/```json/ig, '').replace(/```/g, '')).eposta }}"
+            },
+            {
+              "key": "Phone|phone_number",
+              "phoneValue": "={{ JSON.parse($json.content.parts[0].text.replace(/```json/ig, '').replace(/```/g, '')).telefon }}"
+            },
+            {
+              "key": "Meslek|rich_text",
+              "textContent": "={{ JSON.parse($json.content.parts[0].text.replace(/```json/ig, '').replace(/```/g, '')).meslek }}"
+            },
+            {
+              "key": "Özet|rich_text",
+              "textContent": "={{ JSON.parse($json.content.parts[0].text.replace(/```json/ig, '').replace(/```/g, '')).ozet }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "84c16945-c81a-454d-884a-5b243ddb25d0",
+      "name": "Create a database page",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "0Uvczvi83Y5WfaJa",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "927edb14-4b37-488f-9a08-17c1ca4fd17f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62d61e55c753945544e6a136a2eeb6be5348fd72ea3faa3c4e297d5ccde5a3fa"
+  },
+  "id": "tluf4qkTngXKR2vy",
+  "tags": []
+}
